@@ -1,0 +1,4 @@
+ALTER TABLE issue_analysis
+ADD COLUMN IF NOT EXISTS root_analysis TEXT,
+ADD COLUMN IF NOT EXISTS possible_solution TEXT,
+ADD COLUMN IF NOT EXISTS graph_data JSONB;

@@ -1,0 +1,5 @@
+CREATE TABLE if NOT EXISTS migrations (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    appilied_at TIMESTAMP NOT NULL DEFAULT NOW()
+)
