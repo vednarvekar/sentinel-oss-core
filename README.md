@@ -1,7 +1,8 @@
 🛡️ Sentinel-OSS
 ================
 
-**High-Performance AI Repository Analysis via Lexical & Structural IR.** Sentinel-OSS is not a simple LLM wrapper. It is a distributed analysis engine that combines **BM25 Ranking**, **AST Tokenization**, and **Dependency Propagation** to find the needle in the haystack.
+**High-Performance AI Repository Analysis .** Sentinel-OSS is not a simple LLM wrapper. It is a distributed analysis engine that combines **BM25 Ranking**, **AST Tokenization**, and **Dependency Propagation** to find the needle in the haystack.
+<!-- via Lexical & Structural IR -->
 
 🏗️ Technical Architecture
 --------------------------
