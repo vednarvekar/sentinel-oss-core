@@ -49,6 +49,7 @@ const Landing = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<RepoSearchItem[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [searchMessage, setSearchMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -68,15 +69,26 @@ const Landing = () => {
     setIsSearching(true);
     setShowResults(true);
     setResults([]);
+    setSearchMessage(null);
     try {
       const res = await pollUntilReady(() => searchRepos(query.trim()), {
         intervalMs: 900,
-        maxAttempts: 12,
+        maxAttempts: 30,
       });
-      setResults(res?.data || []);
+      const nextResults = res?.data || [];
+
+      if (res?.status === "ready") {
+        setResults(nextResults);
+        setSearchMessage(nextResults.length === 0 ? "No repositories matched that search." : null);
+        return;
+      }
+
+      setResults([]);
+      setSearchMessage("Search is still processing. Wait a few seconds and search again.");
     } catch (error) {
       console.error(error);
       setResults([]);
+      setSearchMessage("Search failed. Check the API and worker logs, then retry.");
     } finally {
       setIsSearching(false);
     }
@@ -145,6 +157,7 @@ const Landing = () => {
                     if (!e.currentTarget.value.trim()) {
                       setShowResults(false);
                       setResults([]);
+                      setSearchMessage(null);
                     }
                   }}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -185,7 +198,7 @@ const Landing = () => {
               >
                 {isSearching ? (
                   <SearchResultsSkeleton />
-                ) : (
+                ) : results.length > 0 ? (
                   <div className="space-y-3">
                     {results.map((repo, i) => (
                       <motion.div
@@ -225,6 +238,10 @@ const Landing = () => {
                         </div>
                       </motion.div>
                     ))}
+                  </div>
+                ) : (
+                  <div className="glass-card rounded-xl p-4 text-sm text-muted-foreground">
+                    {searchMessage || "Search returned no visible results."}
                   </div>
                 )}
               </motion.div>

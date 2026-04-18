@@ -25,6 +25,7 @@ export async function repoRoutes(server: FastifyInstance){
         }
 
         const cacheKey = cacheKeys.repoSearch(q);
+        const normalizedQuery = q.toLowerCase().trim();
 
         const cached = await redis.get(cacheKey);
         if(cached){
@@ -35,11 +36,17 @@ export async function repoRoutes(server: FastifyInstance){
             }
         }
 
-        const jobId = `search-${q.toLowerCase().trim()}`;
-        await repoSearchQueue.add("search", 
-            {query: q}, 
-            { jobId, removeOnComplete: true, removeOnFail: true }, 
-        )
+        const jobId = `search-${normalizedQuery}`;
+        const existingJob = await repoSearchQueue.getJob(jobId);
+        const state = existingJob ? await existingJob.getState() : null;
+
+        if (state !== "active" && state !== "waiting") {
+            await repoSearchQueue.add("search",
+                {query: q},
+                { jobId, removeOnComplete: true, removeOnFail: true },
+            );
+        }
+
         return {
             status: "processing",
             source: "queue",

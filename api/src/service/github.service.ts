@@ -12,10 +12,20 @@ const BASE_HEADERS = {
   "User-Agent": "Sentinel-OSS",
 } as const;
 
-function getAuthHeader() {
-  const token = process.env.GITHUB_TOKEN?.trim();
-  if (!token) return {} as Record<string, string>;
-  return { Authorization: `Bearer ${token}` } as Record<string, string>;
+function getAuthToken() {
+  return process.env.GITHUB_TOKEN?.trim() || "";
+}
+
+function getHeaders(includeAuth: boolean) {
+  const token = includeAuth ? getAuthToken() : "";
+  if (!token) {
+    return { ...BASE_HEADERS } as Record<string, string>;
+  }
+
+  return {
+    ...BASE_HEADERS,
+    Authorization: `Bearer ${token}`,
+  } as Record<string, string>;
 }
 
 function sleep(ms: number) {
@@ -41,16 +51,26 @@ async function githubFetch(url: string, options: GitHubRequestOptions = {}) {
   const retries = options.retries ?? 5;
   const timeoutMs = options.timeoutMs ?? 20_000;
   let backoffMs = 2000;
+  const hasAuthToken = Boolean(getAuthToken());
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       headers: {
-        ...BASE_HEADERS,
+        ...getHeaders(true),
         Accept: options.accept || "application/vnd.github+json",
-        ...getAuthHeader(),
       } as HeadersInit,
       signal: AbortSignal.timeout(timeoutMs),
     });
+
+    if (response.status === 401 && hasAuthToken) {
+      response = await fetch(url, {
+        headers: {
+          ...getHeaders(false),
+          Accept: options.accept || "application/vnd.github+json",
+        } as HeadersInit,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    }
 
     if (response.ok) return response;
 
